@@ -9,9 +9,9 @@ from timeit import default_timer as timer
 from tensorflow.keras.models import Model, load_model
 import tensorflow.keras.backend as K
 
-from hourglass.model import get_hourglass_model
-from hourglass.data import HG_OUTPUT_STRIDE
-from hourglass.postprocess import post_process_heatmap, post_process_heatmap_simple
+from simple_baselines.model import get_simple_baselines_model
+from simple_baselines.data import OUTPUT_STRIDE
+from simple_baselines.postprocess import post_process_heatmap, post_process_heatmap_simple
 from common.data_utils import preprocess_image
 from common.utils import get_classes, get_skeleton, render_skeleton, optimize_tf_gpu
 
@@ -20,15 +20,12 @@ from detector import detect_person, get_anchors
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 default_config = {
-        "num_stacks": 2,
-        "mobile" : False,
-        "tiny" : False,
-        "model_image_size": (256, 256),
-        "num_channels": 256,
-        "conf_threshold": 0.001,
+        "model_type": 'resnet50_deconv',
+        "model_input_shape": (256, 256),
+        "conf_threshold": 0.1,
         "classes_path": os.path.join('configs', 'mpii_classes.txt'),
         "skeleton_path": None,
-        "weights_path": os.path.join('weights', 'hourglass_mobile.h5'),
+        "weights_path": os.path.join('weights', 'model.h5'),
 
         # YOLOv3 person detection model info
         "det_model_path": os.path.join('detector', 'yolo3_mobilenet_lite_320_coco.h5'),
@@ -40,7 +37,7 @@ default_config = {
     }
 
 
-class Hourglass(object):
+class SimpleBaselines(object):
     _defaults = default_config
 
     @classmethod
@@ -51,7 +48,7 @@ class Hourglass(object):
             return "Unrecognized attribute name '" + n + "'"
 
     def __init__(self, **kwargs):
-        super(Hourglass, self).__init__()
+        super(SimpleBaselines, self).__init__()
         self.__dict__.update(self._defaults) # set up default values
         self.__dict__.update(kwargs) # and update with user overrides
         if self.skeleton_path:
@@ -59,7 +56,7 @@ class Hourglass(object):
         else:
             self.skeleton_lines = None
         self.class_names = get_classes(self.classes_path)
-        self.hourglass_model = self._generate_model()
+        self.model = self._generate_model()
 
         self._init_detection_model()
         K.set_learning_phase(0)
@@ -71,16 +68,11 @@ class Hourglass(object):
 
         num_classes = len(self.class_names)
 
-        # update param for tiny model
-        if self.tiny is True:
-            self.num_channels = 128
-
         # construct model and load weights.
-        hourglass_model = get_hourglass_model(num_classes, self.num_stacks, self.num_channels, input_size=self.model_image_size, mobile=self.mobile)
-        hourglass_model.load_weights(weights_path, by_name=False)#, skip_mismatch=True)
-        hourglass_model.summary()
-        return hourglass_model
-
+        model = get_simple_baselines_model(self.model_type, num_classes, model_input_shape=self.model_input_shape)
+        model.load_weights(weights_path, by_name=False)#, skip_mismatch=True)
+        model.summary()
+        return model
 
     def _init_detection_model(self):
         self.det_anchors = get_anchors(self.det_anchors_path)
@@ -123,17 +115,19 @@ class Hourglass(object):
             person_image = Image.fromarray(image_array[ymin:ymax, xmin:xmax])
             person_array = np.array(person_image, dtype='uint8')
 
-            image_data = preprocess_image(person_image, self.model_image_size)
+            image_data = preprocess_image(person_image, self.model_input_shape)
 
+            # NOTE: image_size and scale in (w,h) format, but
+            #       self.model_input_shape in (h,w) format
             image_size = person_image.size
-            scale = (image_size[0] * 1.0 / self.model_image_size[0], image_size[1] * 1.0 / self.model_image_size[1])
+            scale = (image_size[0] * 1.0 / self.model_input_shape[1], image_size[1] * 1.0 / self.model_input_shape[0])
 
             keypoints = self.predict(image_data)
 
             # rescale keypoints back to origin image size
             keypoints_dict = dict()
             for i, keypoint in enumerate(keypoints):
-                keypoints_dict[self.class_names[i]] = (keypoint[0] * scale[0] * HG_OUTPUT_STRIDE + xmin, keypoint[1] * scale[1] * HG_OUTPUT_STRIDE + ymin, keypoint[2])
+                keypoints_dict[self.class_names[i]] = (keypoint[0] * scale[0] * OUTPUT_STRIDE + xmin, keypoint[1] * scale[1] * OUTPUT_STRIDE + ymin, keypoint[2])
 
             # draw bbox rectangle on image
             cv2.rectangle(image_array, (raw_xmin, raw_ymin), (raw_xmax, raw_ymax), (255, 0, 0), 1, cv2.LINE_AA)
@@ -170,10 +164,12 @@ class Hourglass(object):
             person_image = Image.fromarray(image_array[ymin:ymax, xmin:xmax])
             person_array = np.array(person_image, dtype='uint8')
 
-            image_data = preprocess_image(person_image, self.model_image_size)
+            image_data = preprocess_image(person_image, self.model_input_shape)
 
+            # NOTE: image_size and scale in (w,h) format, but
+            #       self.model_input_shape in (h,w) format
             image_size = person_image.size
-            scale = (image_size[0] * 1.0 / self.model_image_size[0], image_size[1] * 1.0 / self.model_image_size[1])
+            scale = (image_size[0] * 1.0 / self.model_input_shape[1], image_size[1] * 1.0 / self.model_input_shape[0])
 
             # merge batched info for inference
             batch_scale.append(scale)
@@ -199,7 +195,7 @@ class Hourglass(object):
             # rescale keypoints back to origin image size
             keypoints_dict = dict()
             for j, keypoint in enumerate(keypoints):
-                keypoints_dict[self.class_names[j]] = (keypoint[0] * scale[0] * HG_OUTPUT_STRIDE + xmin, keypoint[1] * scale[1] * HG_OUTPUT_STRIDE + ymin, keypoint[2])
+                keypoints_dict[self.class_names[j]] = (keypoint[0] * scale[0] * OUTPUT_STRIDE + xmin, keypoint[1] * scale[1] * OUTPUT_STRIDE + ymin, keypoint[2])
 
             # draw bbox rectangle on image
             cv2.rectangle(image_array, (raw_xmin, raw_ymin), (raw_xmax, raw_ymax), (255, 0, 0), 1, cv2.LINE_AA)
@@ -215,7 +211,7 @@ class Hourglass(object):
 
     def predict(self, image_data):
         # get final predict heatmap
-        prediction = self.hourglass_model.predict(image_data)
+        prediction = self.model.predict(image_data)
         if isinstance(prediction, list):
             prediction = prediction[-1]
         heatmap = prediction[0]
@@ -228,7 +224,7 @@ class Hourglass(object):
 
     def batch_predict(self, image_data):
         # get batch predict heatmap
-        prediction = self.hourglass_model.predict_on_batch(image_data)
+        prediction = self.model.predict_on_batch(image_data)
         if isinstance(prediction, list):
             prediction = prediction[-1]
 
@@ -240,15 +236,11 @@ class Hourglass(object):
 
         return batch_keypoints
 
-
     def dump_model_file(self, output_model_file):
-        # Dump out the final heatmap output model as inference model,
-        # since we don't need the intermediate heatmap in inference stage
-        model = Model(inputs=self.hourglass_model.input, outputs=self.hourglass_model.outputs[-1])
-        model.save(output_model_file)
+        self.model.save(output_model_file)
 
 
-def detect_video(hourglass, video_path, output_path=""):
+def detect_video(simple_baselines, video_path, output_path=""):
     import cv2
     vid = cv2.VideoCapture(0 if video_path == '0' else video_path)
     if not vid.isOpened():
@@ -268,7 +260,7 @@ def detect_video(hourglass, video_path, output_path=""):
     while True:
         return_value, frame = vid.read()
         image = Image.fromarray(frame)
-        image = hourglass.detect_image(image)
+        image = simple_baselines.detect_image(image)
         result = np.asarray(image)
         curr_time = timer()
         exec_time = curr_time - prev_time
@@ -295,7 +287,7 @@ def detect_video(hourglass, video_path, output_path=""):
 
 
 
-def detect_img(hourglass):
+def detect_img(simple_baselines):
     while True:
         img = input('Input image filename:')
         try:
@@ -304,50 +296,42 @@ def detect_img(hourglass):
             print('Open Error! Try again!')
             continue
         else:
-            r_image = hourglass.detect_image(image)
+            r_image = simple_baselines.detect_image(image)
             r_image.show()
 
 
 
 if __name__ == "__main__":
-    # class Hourglass defines the default value, so suppress any default here
-    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS, description='demo or dump out Hourglass h5 model')
+    # class SimpleBaselines defines the default value, so suppress any default here
+    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS, description='demo or dump out Simple Baselines h5 model')
     '''
     Command line options
     '''
     parser.add_argument(
-        '--num_stacks', type=int,
-        help='num of stacks, default ' + str(Hourglass.get_defaults("num_stacks"))
+        '--model_type', type=str,
+        help='model type, default ' + str(SimpleBaselines.get_defaults("model_type"))
     )
     parser.add_argument(
-        '--mobile', default=False, action="store_true",
-        help='use depthwise conv in hourglass, default ' + str(Hourglass.get_defaults("mobile"))
-    )
-    parser.add_argument(
-        '--tiny', default=False, action="store_true",
-        help='tiny network for speed, feature channel=128, default ' + str(Hourglass.get_defaults("tiny"))
-    )
-    parser.add_argument(
-        '--model_image_size', type=str,
-        help='model image input size as <num>x<num>, default ' +
-        str(Hourglass.get_defaults("model_image_size")[0])+'x'+str(Hourglass.get_defaults("model_image_size")[1]),
-        default=str(Hourglass.get_defaults("model_image_size")[0])+'x'+str(Hourglass.get_defaults("model_image_size")[1])
+        '--model_input_shape', type=str,
+        help='model image input shape as <height>x<width>, default ' +
+        str(SimpleBaselines.get_defaults("model_input_shape")[0])+'x'+str(SimpleBaselines.get_defaults("model_input_shape")[1]),
+        default=str(SimpleBaselines.get_defaults("model_input_shape")[0])+'x'+str(SimpleBaselines.get_defaults("model_input_shape")[1])
     )
     parser.add_argument(
         '--weights_path', type=str,
-        help='path to model weight file, default ' + Hourglass.get_defaults("weights_path")
+        help='path to model weight file, default ' + SimpleBaselines.get_defaults("weights_path")
     )
     parser.add_argument(
         '--classes_path', type=str, required=False,
-        help='path to keypoint class definitions, default ' + Hourglass.get_defaults("classes_path")
+        help='path to keypoint class definitions, default ' + SimpleBaselines.get_defaults("classes_path")
     )
     parser.add_argument(
         '--skeleton_path', type=str, required=False,
-        help='path to keypoint skeleton definitions, default ' + str(Hourglass.get_defaults("skeleton_path"))
+        help='path to keypoint skeleton definitions, default ' + str(SimpleBaselines.get_defaults("skeleton_path"))
     )
     parser.add_argument(
         '--conf_threshold', type=float,
-        help='confidence threshold, default ' + str(Hourglass.get_defaults("conf_threshold"))
+        help='confidence threshold, default ' + str(SimpleBaselines.get_defaults("conf_threshold"))
     )
 
     parser.add_argument(
@@ -380,12 +364,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     # param parse
-    if args.model_image_size:
-        height, width = args.model_image_size.split('x')
-        args.model_image_size = (int(height), int(width))
+    if args.model_input_shape:
+        height, width = args.model_input_shape.split('x')
+        args.model_input_shape = (int(height), int(width))
 
     # get wrapped inference object
-    hourglass = Hourglass(**vars(args))
+    simple_baselines = SimpleBaselines(**vars(args))
 
     if args.dump_model:
         """
@@ -395,7 +379,7 @@ if __name__ == "__main__":
             raise ValueError('output model file is not specified')
 
         print('Dumping out training model to inference model')
-        hourglass.dump_model_file(args.output_model_file)
+        simple_baselines.dump_model_file(args.output_model_file)
         sys.exit()
 
     if args.image:
@@ -405,9 +389,9 @@ if __name__ == "__main__":
         print("Image detection mode")
         if "input" in args:
             print(" Ignoring remaining command line arguments: " + args.input + "," + args.output)
-        detect_img(hourglass)
+        detect_img(simple_baselines)
     elif "input" in args:
-        detect_video(hourglass, args.input, args.output)
+        detect_video(simple_baselines, args.input, args.output)
     else:
         print("Must specify at least video_input_path.  See usage with --help.")
 
