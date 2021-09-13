@@ -9,8 +9,6 @@ from tensorflow.keras.applications.mobilenet import MobileNet
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
 from tensorflow.keras.applications.resnet50 import ResNet50
 
-#import os, sys, argparse
-#sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from common.backbones.mobilenet_v3 import MobileNetV3Large, MobileNetV3Small
 from common.backbones.peleenet import PeleeNet
 from common.backbones.ghostnet import GhostNet
@@ -90,11 +88,4 @@ def get_simple_baselines_model(model_type, num_classes, model_input_shape=None, 
         print('Unfreeze all of the layers.')
 
     return model
-
-
-
-#if __name__ == '__main__':
-    #model, _ = get_simple_baselines_model('mobilenetv2_deconv', 21, (256, 256))
-    #model.summary()
-    #model.save('check.h5')
 

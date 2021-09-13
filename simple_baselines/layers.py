@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from tensorflow.keras.layers import Conv2D, DepthwiseConv2D, Conv2DTranspose, UpSampling2D, SeparableConv2D, BatchNormalization, ReLU
+from tensorflow.keras.layers import Conv2D, Conv2DTranspose, UpSampling2D, SeparableConv2D, BatchNormalization, ReLU
 #from tensorflow.keras import backend as K
 
 

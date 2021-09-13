@@ -6,19 +6,28 @@
 
 An end-to-end single-object keypoint estimation pipeline with Simple Baselines models, implemented with tf.keras and support different backbones & different head architecture:
 
-#### Model Type
-- [x] Standard stacked hourglass model
-- [x] Mobile stacked hourglass model (using depthwise separable conv)
-- [x] Tiny stacked hourglass model (128 feature channels)
-- [x] Configuable stack number
+#### Backbone
+- [x] ResNet50
+- [x] MobileNetV1
+- [x] MobileNetV2
+- [x] MobileNetV3(Large/Small)
+- [x] PeleeNet([paper](https://arxiv.org/abs/1804.06882))
+- [x] GhostNet([paper](https://arxiv.org/abs/1911.11907))
+
+#### Head
+- [x] Standard Deconv (Conv2DTranspose) block
+- [x] Simple Upsample (UpSampling2D+Conv2D) block
+- [x] Light Upsample (UpSampling2D+SeparableConv2D) block
 
 #### Loss
 - [x] Mean Squared Error loss
 - [x] Mean Absolute Error loss
+- [x] Weighted Mean Squared Error loss
 - [x] Smooth L1 loss
 - [x] Huber loss
 
 #### Train tech
+- [x] Transfer training from ImageNet
 - [x] Dynamic learning rate decay (Cosine/Exponential/Polynomial/PiecewiseConstant)
 - [x] Mixed precision training (valid for TF-2.1 and later)
 - [x] Multi-GPU training with SyncBatchNorm support (valid for TF-2.2 and later)
@@ -125,28 +134,30 @@ Install requirements on Ubuntu 16.04/18.04:
                 * Row format: `key_point_name1,key_point_name2,flip_type` (no space). Keypoint name should be aligned with classes name file;
                 * Flip type: h-horizontal; v-vertical.
 
-2. [train.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/train.py)
+2. [train.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/train.py)
 
 ```
-# python train.py -h
-usage: train.py [-h] [--num_stacks NUM_STACKS] [--mobile] [--tiny]
-                [--model_image_size MODEL_IMAGE_SIZE]
+usage: train.py [-h] [--model_type MODEL_TYPE]
+                [--model_input_shape MODEL_INPUT_SHAPE]
                 [--weights_path WEIGHTS_PATH] [--dataset_path DATASET_PATH]
                 [--classes_path CLASSES_PATH]
                 [--matchpoint_path MATCHPOINT_PATH] [--batch_size BATCH_SIZE]
                 [--optimizer OPTIMIZER]
-                [--loss_type {mse,mae,smooth_l1,huber}]
-                [--learning_rate LEARNING_RATE] [--init_epoch INIT_EPOCH]
+                [--loss_type {mse,mae,weighted_mse,smooth_l1,huber}]
+                [--learning_rate LEARNING_RATE]
+                [--decay_type {None,cosine,exponential,polynomial,piecewise_constant}]
+                [--mixed_precision] [--transfer_epoch TRANSFER_EPOCH]
+                [--freeze_level {0,1,2}] [--init_epoch INIT_EPOCH]
                 [--total_epoch TOTAL_EPOCH] [--gpu_num GPU_NUM]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --num_stacks NUM_STACKS
-                        number of hourglass stacks, default=2
-  --mobile              use depthwise conv in hourglass'
-  --tiny                tiny network for speed, feature channel=128
-  --model_image_size MODEL_IMAGE_SIZE
-                        model image input size as <height>x<width>,
+  --model_type MODEL_TYPE
+                        Simple Baselines model type: resnet50_deconv/resnet50_
+                        upsample/mobilenetv2_upsample_lite/,
+                        default=resnet50_deconv
+  --model_input_shape MODEL_INPUT_SHAPE
+                        model image input shape as <height>x<width>,
                         default=256x256
   --weights_path WEIGHTS_PATH
                         Pretrained model/weights file for fine tune
@@ -165,11 +176,20 @@ optional arguments:
   --optimizer OPTIMIZER
                         optimizer for training (adam/rmsprop/sgd),
                         default=rmsprop
-  --loss_type {mse,mae,smooth_l1,huber}
-                        loss type for training (mse/mae/smooth_l1/huber),
-                        default=mse
+  --loss_type {mse,mae,weighted_mse,smooth_l1,huber}
+                        loss type for training
+                        (mse/mae/weighted_mse/smooth_l1/huber), default=mse
   --learning_rate LEARNING_RATE
                         Initial learning rate, default=0.0005
+  --decay_type {None,cosine,exponential,polynomial,piecewise_constant}
+                        Learning rate decay type, default=None
+  --mixed_precision     Use mixed precision mode in training, only for TF>2.1
+  --transfer_epoch TRANSFER_EPOCH
+                        Transfer training stage epochs, default=1
+  --freeze_level {0,1,2}
+                        Freeze level of the model in transfer training stage.
+                        0:NA/1:backbone/2:only open prediction layer,
+                        default=1
   --init_epoch INIT_EPOCH
                         initial training epochs for fine tune training,
                         default=0
@@ -180,7 +200,8 @@ optional arguments:
 
 Following is a reference training config cmd:
 ```
-# python train.py --num_stacks=2 --mobile --dataset_path=data/mscoco_2017/ --classes_path=configs/coco_classes.txt --matchpoint_path=configs/coco_match_point.txt
+# python train.py --model_type=resnet50_deconv --model_input_shape=256x256 --dataset_path=data/mpii/ --classes_path=configs/mpii_classes.txt --matchpoint_path=configs/mpii_match_point.txt --decay_type=cosine --transfer_epoch=1
+
 ```
 
 Checkpoints during training could be found at `logs/000/`. Choose a best one as result
@@ -192,7 +213,7 @@ You can also use Tensorboard to monitor the loss trend during train:
 
 MultiGPU usage: use `--gpu_num N` to use N GPUs. It use [tf.distribute.MirroredStrategy](https://www.tensorflow.org/guide/distributed_training#mirroredstrategy) to support MultiGPU environment.
 
-Some val_accuracy curves during training MSCOCO Keypoints 2017 Dataset. Chart can be created with [draw_train_curve.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/tools/misc/draw_train_curve.py) and use recorded logs/val.txt during train:
+Some val_accuracy curves during training MSCOCO Keypoints 2017 Dataset. Chart can be created with [draw_train_curve.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/tools/misc/draw_train_curve.py) and use recorded logs/val.txt during train:
 
 <p align="center">
   <img src="assets/accuracy.jpg">
@@ -202,17 +223,17 @@ Some val_accuracy curves during training MSCOCO Keypoints 2017 Dataset. Chart ca
 We need to dump out inference model from training checkpoint for eval or demo. Following script cmd work for that.
 
 ```
-# python demo.py --num_stacks=2 --mobile --weights_path=logs/<checkpoint>.h5 --classes_path=configs/coco_classes.txt --dump_model --output_model_file=model.h5
+# python demo.py --model_type=resnet50_deconv --model_input_shape=256x256 --weights_path=logs/<checkpoint>.h5 --classes_path=configs/mpii_classes.txt --dump_model --output_model_file=model.h5
 ```
 
 Change model type & classes file for different training mode.
 
 
 ### Demo
-1. [demo.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/demo.py)
+1. [demo.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/demo.py)
 > * Demo script for trained model
 
-(Optional) You can create a skeleton definition file for demo usage. With it you can draw a skeleton on keypoint detection output image. The skeleton file format can refer [coco_skeleton.txt](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/configs/coco_skeleton.txt)
+(Optional) You can create a skeleton definition file for demo usage. With it you can draw a skeleton on keypoint detection output image. The skeleton file format can refer [coco_skeleton.txt](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/configs/coco_skeleton.txt)
 
     * One row for one skeleton line;
     * Skeleton line format: `start_keypoint_name,end_keypoint_name,color` (no space). Keypoint name should be aligned with classes name file;
@@ -220,11 +241,11 @@ Change model type & classes file for different training mode.
 
 image detection mode
 ```
-# python demo.py --num_stacks=2 --mobile --weights_path=model.h5 --classes_path=configs/coco_classes.txt --skeleton_path=configs/coco_skeleton.txt --image
+# python demo.py --model_type=resnet50_deconv --model_input_shape=256x256 --weights_path=model.h5 --classes_path=configs/mpii_classes.txt --skeleton_path=configs/mpii_skeleton.txt --image
 ```
 video detection mode
 ```
-# python demo.py --num_stacks=2 --mobile --weights_path=model.h5 --classes_path=configs/coco_classes.txt --skeleton_path=configs/coco_skeleton.txt --input=test.mp4
+# python demo.py --model_type=resnet50_deconv --model_input_shape=256x256 --weights_path=model.h5 --classes_path=configs/mpii_classes.txt --skeleton_path=configs/mpii_skeleton.txt --input=test.mp4
 ```
 For video detection mode, you can use "input=0" to capture live video from web camera and "output=<video name>" to dump out detection result to another video
 
@@ -236,13 +257,13 @@ MSCOCO keypoints detection sample:
 </p>
 
 ### Evaluation
-Use [eval.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/eval.py) to do evaluation on the inference model with your test dataset. Currently it support PCK (Percentage of Correct Keypoints) metric with standard normalize coefficient (by default 6.4 under input_size=(256,256)) on different score threshold. By default it will generate a MSCOCO format keypoints detection result json file `result/keypoints_result.json` ([format](http://cocodataset.org/#format-results)). You can also use `--save_result` to save all the detection result on evaluation dataset as images and `--skeleton_path` to draw keypoint skeleton on images:
+Use [eval.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/eval.py) to do evaluation on the inference model with your test dataset. Currently it support PCK (Percentage of Correct Keypoints) metric with standard normalize coefficient (by default 6.4 under input_size=(256,256)) on different score threshold. By default it will generate a MSCOCO format keypoints detection result json file `result/keypoints_result.json` ([format](http://cocodataset.org/#format-results)). You can also use `--save_result` to save all the detection result on evaluation dataset as images and `--skeleton_path` to draw keypoint skeleton on images:
 
 ```
-# python eval.py --model_path=model.h5 --dataset_path=data/mscoco_2017/ --classes_path=configs/coco_classes.txt --save_result --skeleton_path=configs/coco_skeleton.txt
+# python eval.py --model_path=model.h5 --dataset_path=data/mpii/ --classes_path=configs/mpii_classes.txt --save_result --skeleton_path=configs/mpii_skeleton.txt
 ```
 
-For MSCOCO dataset, you can further use [pycoco_eval.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/tree/master/tools/evaluation/pycoco_eval.py) with the generated result json and COCO GT annotation to get official COCO AP with [pycocotools](https://github.com/cocodataset/cocoapi/tree/master/PythonAPI/pycocotools):
+For MSCOCO dataset, you can further use [pycoco_eval.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/tree/master/tools/evaluation/pycoco_eval.py) with the generated result json and COCO GT annotation to get official COCO AP with [pycocotools](https://github.com/cocodataset/cocoapi/tree/master/PythonAPI/pycocotools):
 
 ```
 # cd tools/evaluation && python pycoco_eval.py -h
@@ -280,7 +301,7 @@ Some experiment on MSCOCO Keypoints 2017 dataset:
 
 
 ### Tensorflow model convert
-Using [keras_to_tensorflow.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/tools/model_converter/keras_to_tensorflow.py) to convert the keras .h5 model to tensorflow frozen pb model:
+Using [keras_to_tensorflow.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/tools/model_converter/keras_to_tensorflow.py) to convert the keras .h5 model to tensorflow frozen pb model:
 ```
 # python keras_to_tensorflow.py
     --input_model="path/to/keras/model.h5"
@@ -288,7 +309,7 @@ Using [keras_to_tensorflow.py](https://github.com/david8862/tf-keras-stacked-hou
 ```
 
 ### ONNX model convert
-Using [keras_to_onnx.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/tools/model_converter/keras_to_onnx.py) to convert the tf.keras .h5 model to ONNX model:
+Using [keras_to_onnx.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/tools/model_converter/keras_to_onnx.py) to convert the tf.keras .h5 model to ONNX model:
 ```
 ### need to set environment TF_KERAS=1 for tf.keras model
 # export TF_KERAS=1
@@ -298,11 +319,11 @@ Using [keras_to_onnx.py](https://github.com/david8862/tf-keras-stacked-hourglass
     --op_set=11
 ```
 
-You can also use [eval.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/eval.py) to do evaluation on the pb & onnx inference model
+You can also use [eval.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/eval.py) to do evaluation on the pb & onnx inference model
 
 
 ### Inference model deployment
-See [on-device inference](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/inference) for TFLite model deployment
+See [on-device inference](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/inference) for TFLite model deployment
 
 
 ### TODO
@@ -326,7 +347,7 @@ New features, improvements and any other kind of contributions are warmly welcom
 
 
 # Citation
-Please cite tf-keras-stacked-hourglass-keypoint-detection in your publications if it helps your research:
+Please cite tf-keras-simple-baselines-keypoint-detection in your publications if it helps your research:
 ```
 @article{Stacked_Hourglass_Network_Keras,
      Author = {VictorLi},

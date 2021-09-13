@@ -171,8 +171,8 @@ if __name__ == "__main__":
         help='batch size for training, default=%(default)s')
     parser.add_argument('--optimizer', type=str, required=False, default='rmsprop',
         help = "optimizer for training (adam/rmsprop/sgd), default=%(default)s")
-    parser.add_argument('--loss_type', type=str, required=False, default='mse', choices=['mse', 'mae', 'smooth_l1', 'huber'],
-        help = "loss type for training (mse/mae/smooth_l1/huber), default=%(default)s")
+    parser.add_argument('--loss_type', type=str, required=False, default='mse', choices=['mse', 'mae', 'weighted_mse', 'smooth_l1', 'huber'],
+        help = "loss type for training (mse/mae/weighted_mse/smooth_l1/huber), default=%(default)s")
     parser.add_argument('--learning_rate', type=float, required=False, default=5e-4,
         help = "Initial learning rate, default=%(default)s")
     parser.add_argument('--decay_type', type=str, required=False, default=None, choices=[None, 'cosine', 'exponential', 'polynomial', 'piecewise_constant'],
@@ -180,10 +180,10 @@ if __name__ == "__main__":
     parser.add_argument('--mixed_precision', default=False, action="store_true",
         help='Use mixed precision mode in training, only for TF>2.1')
 
-    parser.add_argument('--transfer_epoch', type=int, required=False, default=5,
+    parser.add_argument('--transfer_epoch', type=int, required=False, default=1,
         help = "Transfer training stage epochs, default=%(default)s")
     parser.add_argument('--freeze_level', type=int, required=False, default=1, choices=[0, 1, 2],
-        help = "Freeze level of the model in transfer training stage. 0:NA/1:backbone/2:only open prediction layer")
+        help = "Freeze level of the model in transfer training stage. 0:NA/1:backbone/2:only open prediction layer, default=%(default)s")
     parser.add_argument("--init_epoch", type=int, required=False, default=0,
         help="initial training epochs for fine tune training, default=%(default)s")
     parser.add_argument("--total_epoch", type=int, required=False, default=100,
