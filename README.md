@@ -48,14 +48,37 @@ Install requirements on Ubuntu 16.04/18.04:
 ### Train
 1. Prepare dataset
     1. MPII Human Pose Dataset
-        * Download & extract MPII dataset image package to `data/mpii`:
+        * Download & extract MPII dataset image package and annotation package to `data/mpii`:
 
             ```
-            # cd data/mpii && wget https://datasets.d2.mpi-inf.mpg.de/andriluka14cvpr/mpii_human_pose_v1.tar.gz
+            # mkdir -p data/mpii
+            # cd data/mpii
+            # wget https://datasets.d2.mpi-inf.mpg.de/andriluka14cvpr/mpii_human_pose_v1.tar.gz
+            # wget https://datasets.d2.mpi-inf.mpg.de/andriluka14cvpr/mpii_human_pose_v1_u12_2.zip
             # tar xzvf mpii_human_pose_v1.tar.gz
+            # unzip -e mpii_human_pose_v1_u12_2.zip
+            ```
+        * use [mpii_annotation.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/tools/dataset_converter/mpii_annotation.py) to generate our annotation json file "annotations.json" from official annotation:
 
             ```
-            Images will be placed at `data/mpii/images`
+            # cd tools/dataset_converter/ && python mpii_annotation.py -h
+            usage: mpii_annotation.py [-h] --mat_file MAT_FILE [--output_file OUTPUT_FILE]
+                                      [--val_split VAL_SPLIT] [--single_only]
+
+            Parse MPII dataset .mat annotation to our json annotation file
+
+            optional arguments:
+              -h, --help            show this help message and exit
+              --mat_file MAT_FILE   MPII mat file
+              --output_file OUTPUT_FILE
+                                    output json annotation file,
+                                    default=./train_annotations.json
+              --val_split VAL_SPLIT
+                                    validation data persentage in dataset, default=0.1
+              --single_only         only include single person sample
+
+            # python mpii_annotation.py --mat_file=../../data/mpii/mpii_human_pose_v1_u12_2/mpii_human_pose_v1_u12_1.mat --output_file=../../data/mpii/annotations.json --val_split=0.1
+            ```
 
     2. MSCOCO Keypoints 2014/2017 Dataset
         * Download & extract MSCOCO train/val image package and annotation package to `data/mscoco_2014(2017)`:
@@ -78,9 +101,9 @@ Install requirements on Ubuntu 16.04/18.04:
             # unzip val2017.zip -d images
             # unzip annotations_trainval2017.zip
             ```
-        * use [coco_annotation.py](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/tools/dataset_converter/coco_annotation.py) to generate our annotation json file "annotations.json" from official annotation:
+        * use [coco_annotation.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/tools/dataset_converter/coco_annotation.py) to generate our annotation json file "annotations.json" from official annotation:
             ```
-            # cd tools && python coco_annotation.py -h
+            # cd tools/dataset_converter/ && python coco_annotation.py -h
             usage: coco_annotation.py [-h] --train_anno_path TRAIN_ANNO_PATH
                                       --val_anno_path VAL_ANNO_PATH
                                       [--output_anno_path OUTPUT_ANNO_PATH]
@@ -127,9 +150,9 @@ Install requirements on Ubuntu 16.04/18.04:
             Put the annotation file to `data/<dataset_name>` and rename to "annotations.json"
         * Create keypoint config file: classes name file, match point file
 
-            * Classes name file format could refer to  [coco_classes.txt](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/configs/coco_classes.txt). Keypoint order should be aligned with "joint_self" field in annotation json file
+            * Classes name file format could refer to  [coco_classes.txt](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/configs/coco_classes.txt). Keypoint order should be aligned with "joint_self" field in annotation json file
 
-            * Match point file format could refer to  [coco_match_point.txt](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/blob/master/configs/coco_match_point.txt). It's used in horizontal/vertical flipping of input image & keypoints for data augment:
+            * Match point file format could refer to  [coco_match_point.txt](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/configs/coco_match_point.txt). It's used in horizontal/vertical flipping of input image & keypoints for data augment:
                 * One row for one pair of matched keypoints in annotation file;
                 * Row format: `key_point_name1,key_point_name2,flip_type` (no space). Keypoint name should be aligned with classes name file;
                 * Flip type: h-horizontal; v-vertical.
@@ -349,14 +372,10 @@ New features, improvements and any other kind of contributions are warmly welcom
 # Citation
 Please cite tf-keras-simple-baselines-keypoint-detection in your publications if it helps your research:
 ```
-@article{Stacked_Hourglass_Network_Keras,
-     Author = {VictorLi},
-     Year = {2018}
-}
-@article{Stacked Hourglass Network,
-     title={Stacked Hourglass Networks for Human Pose Estimation},
-     author={Alejandro Newell, Kaiyu Yang, Jia Deng},
-     journal = {arXiv},
-     year={2016}
+@inproceedings{xiao2018simple,
+    author={Xiao, Bin and Wu, Haiping and Wei, Yichen},
+    title={Simple Baselines for Human Pose Estimation and Tracking},
+    booktitle = {European Conference on Computer Vision (ECCV)},
+    year = {2018}
 }
 ```

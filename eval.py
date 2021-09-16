@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Calculate PCK for Hourglass model on validation dataset
+Calculate PCK for Simple Baselines model on validation dataset
 """
 import os, argparse, json
 import numpy as np
@@ -165,7 +165,7 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
     plt.close()
 
 
-def revert_pred_keypoints(keypoints, metainfo, model_input_shape, heatmap_size):
+def revert_pred_keypoints(keypoints, metainfo, model_input_shape, heatmap_shape):
     # invert transform keypoints based on center & scale
     center = metainfo['center']
     scale = metainfo['scale']
@@ -175,7 +175,7 @@ def revert_pred_keypoints(keypoints, metainfo, model_input_shape, heatmap_size):
     # 2 ways of keypoints invert transform, according to data preprocess solutions in simple_baselines/data.py
 
     # Option 1 (from origin repo):
-    reverted_keypoints = invert_transform_keypoints(keypoints, center, scale, heatmap_size, rotate_angle=0)
+    reverted_keypoints = invert_transform_keypoints(keypoints, center, scale, heatmap_shape, rotate_angle=0)
 
     # Option 2:
     #reverted_keypoints = revert_keypoints(keypoints, center, scale, image_shape, model_input_shape)
@@ -407,7 +407,7 @@ def eval_PCK(model, model_format, eval_dataset, class_names, model_input_shape, 
         else:
             raise ValueError('invalid model format')
 
-        heatmap_size = heatmap.shape[0:2]
+        heatmap_shape = heatmap.shape[0:2]
 
         # get predict keypoints from heatmap
         pred_keypoints = post_process_heatmap_simple(heatmap, conf_threshold)
@@ -427,7 +427,7 @@ def eval_PCK(model, model_format, eval_dataset, class_names, model_input_shape, 
                 succeed_dict[class_name] = succeed_dict[class_name] + 1
 
         # revert predict keypoints back to origin image size
-        reverted_pred_keypoints = revert_pred_keypoints(pred_keypoints, metainfo, model_input_shape, heatmap_size)
+        reverted_pred_keypoints = revert_pred_keypoints(pred_keypoints, metainfo, model_input_shape, heatmap_shape)
 
         # get coco result dict with predict keypoints and image info
         result_dict = get_result_dict(reverted_pred_keypoints, metainfo)
@@ -463,7 +463,7 @@ def eval_PCK(model, model_format, eval_dataset, class_names, model_input_shape, 
         window_title = "PCK evaluation"
         plot_title = "PCK@{0} score = {1:.2f}%".format(score_threshold, total_accuracy)
         x_label = "Accuracy"
-        output_path = os.path.join('result','PCK.jpg')
+        output_path = os.path.join('result','PCK.png')
         draw_plot_func(accuracy_dict, len(accuracy_dict), window_title, plot_title, x_label, output_path, to_show=False, plot_color='royalblue', true_p_bar='')
 
     return total_accuracy, accuracy_dict
@@ -524,7 +524,7 @@ def load_eval_model(model_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS, description='evaluate Hourglass model (h5/pb/onnx/tflite/mnn) with test dataset')
+    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS, description='evaluate Simple Baselines model (h5/pb/onnx/tflite/mnn) with test dataset')
     '''
     Command line options
     '''
@@ -573,8 +573,10 @@ def main():
     model_input_shape = (int(height), int(width))
     normalize = get_normalize(model_input_shape)
 
+    # load trained model for eval
     model, model_format = load_eval_model(args.model_path)
 
+    # prepare eval dataset
     eval_dataset = keypoints_dataset(args.dataset_path, class_names,
                               input_shape=model_input_shape, is_train=False)
 

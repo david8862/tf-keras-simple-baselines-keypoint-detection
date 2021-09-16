@@ -4,7 +4,7 @@ import os, random
 import numpy as np
 from PIL import Image
 import json
-from common.data_utils import random_horizontal_flip, random_vertical_flip, random_brightness, random_grayscale, random_chroma, random_contrast, random_sharpness, random_blur, random_histeq, random_rotate_angle, crop_single_person, rotate_single_person, crop_image, normalize_image, transform_keypoints, generate_gt_heatmap
+from common.data_utils import random_horizontal_flip, random_vertical_flip, random_brightness, random_grayscale, random_chroma, random_contrast, random_sharpness, random_blur, random_histeq, random_rotate_angle, crop_single_object, rotate_single_object, crop_image, normalize_image, transform_keypoints, generate_gt_heatmap
 
 # by default, Simple Baselines model use output_stride = 4, which means:
 #
@@ -16,9 +16,9 @@ OUTPUT_STRIDE = 4
 
 class keypoints_dataset(object):
     def __init__(self, dataset_path, class_names, input_shape, is_train, matchpoints=None):
-        self.jsonfile = os.path.join(dataset_path, 'annotations.json')
+        self.json_file = os.path.join(dataset_path, 'annotations.json')
         self.is_train = is_train
-        self.imgpath = os.path.join(dataset_path, 'images')
+        self.image_path = os.path.join(dataset_path, 'images')
         self.class_names = class_names
         self.num_classes = len(class_names)
         self.input_shape = input_shape
@@ -64,7 +64,7 @@ class keypoints_dataset(object):
         #  'people_index': 1.0,
         #  'numOtherPeople': 1.0,
         #  'headboxes': [[0.0, 0.0], [0.0, 0.0]]}
-        with open(self.jsonfile) as anno_file:
+        with open(self.json_file) as anno_file:
             annotations = json.load(anno_file)
 
         val_annotation, train_annotation = [], []
@@ -136,7 +136,7 @@ class keypoints_dataset(object):
                         yield batch_images, batch_heatmaps
 
     def process_image(self, sample_index, annotation):
-        imagefile = os.path.join(self.imgpath, annotation['img_paths'])
+        imagefile = os.path.join(self.image_path, annotation['img_paths'])
         img = Image.open(imagefile)
         # make sure image is in RGB mode with 3 channels
         if img.mode != 'RGB':
@@ -198,14 +198,14 @@ class keypoints_dataset(object):
 
         #######################################################################################################
         # 2 solutions of input data preprocess, including:
-        #     1. crop single person area from origin image
+        #     1. crop single object area from origin image
         #     2. apply rotate augment
         #     3. resize to model input size
         #     4. transform gt keypoints to cropped image reference
 
         ###############################
         # Option 1 (from origin repo):
-        # crop out single person area, resize to input size and normalize image
+        # crop out single object area, resize to input size and normalize image
         image = crop_image(image, center, scale, self.input_shape, rotate_angle)
 
         # transform keypoints to cropped image reference
@@ -215,12 +215,12 @@ class keypoints_dataset(object):
 
         ###############################
         # Option 2:
-        # crop out single person area and transform keypoints coordinates to single person reference
-        #image, transformed_keypoints = crop_single_person(image, keypoints, center, scale, self.input_shape)
+        # crop out single object area and transform keypoints coordinates to single object reference
+        #image, transformed_keypoints = crop_single_object(image, keypoints, center, scale, self.input_shape)
 
         #if rotate_angle != 0:
-            # rotate single person image and keypoints coordinates when augment
-            #image, transformed_keypoints = rotate_single_person(image, transformed_keypoints, rotate_angle)
+            # rotate single object image and keypoints coordinates when augment
+            #image, transformed_keypoints = rotate_single_object(image, transformed_keypoints, rotate_angle)
 
         # convert keypoints to model output reference
         #transformed_keypoints[:, 0:2] = transformed_keypoints[:, 0:2] / OUTPUT_STRIDE
