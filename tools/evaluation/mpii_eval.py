@@ -26,7 +26,7 @@ def fill_eval_array(eval_keypoints_array, pred_keypoints, metainfo, model_input_
     # get sample index from meta info
     sample_index = metainfo['sample_index']
 
-    # revert predict keypoints back to origin image size
+    # revert predict keypoints back to origin image shape
     reverted_pred_keypoints = revert_pred_keypoints(pred_keypoints, metainfo, model_input_shape, output_shape)
 
     # fill result array at sample_index
@@ -191,7 +191,7 @@ def mpii_eval(model, model_format, eval_dataset, class_names, model_input_shape,
     batch_size = 1
     pbar = tqdm(total=eval_dataset.get_dataset_size(), desc='Eval model')
     for image_data, gt_heatmap, metainfo in eval_dataset.generator(batch_size, with_meta=True):
-        # fetch validation data from generator, which will crop out single person area, resize to input_size and normalize image
+        # fetch validation data from generator, which will crop out single person area, resize to input_shape and normalize image
         count += batch_size
         if count > eval_dataset.get_dataset_size():
             break
@@ -221,7 +221,7 @@ def mpii_eval(model, model_format, eval_dataset, class_names, model_input_shape,
         pred_keypoints = post_process_heatmap_simple(heatmap, conf_threshold)
         pred_keypoints = np.array(pred_keypoints)
 
-        # revert predict keypoints to origin image size,
+        # revert predict keypoints to origin image shape,
         # and fill into eval result array
         fill_eval_array(eval_keypoints_array, pred_keypoints, metainfo, model_input_shape, heatmap_shape)
 

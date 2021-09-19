@@ -611,23 +611,23 @@ def label_heatmap(img, pt, sigma, type='Gaussian'):
     return img
 
 
-def generate_gt_heatmap(keypoints, heatmap_size, sigma=1):
+def generate_gt_heatmap(keypoints, heatmap_shape, sigma=1):
     """
     generate ground truth keypoints heatmap
 
     # Arguments
         keypoints: keypoints array, shape=(num_keypoints, 3)
             each keypoints with format (x, y, visibility)
-        heatmap_size: ground truth heatmap shape
+        heatmap_shape: ground truth heatmap shape
             numpy array containing segment label mask
         sigma: variance of the 2D gaussian heatmap distribution
 
     # Returns
         gt_heatmap: ground truth keypoints heatmap,
-                    shape=(heatmap_size[0], heatmap_size[1], num_keypoints)
+                    shape=(heatmap_shape[0], heatmap_shape[1], num_keypoints)
     """
     num_keypoints = keypoints.shape[0]
-    gt_heatmap = np.zeros(shape=(heatmap_size[0], heatmap_size[1], num_keypoints), dtype=float)
+    gt_heatmap = np.zeros(shape=(heatmap_shape[0], heatmap_shape[1], num_keypoints), dtype=float)
 
     for i in range(num_keypoints):
         visibility = keypoints[i, 2]
