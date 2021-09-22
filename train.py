@@ -55,15 +55,10 @@ def main(args):
     callbacks = [tensorboard, eval_callback, terminate_on_nan, checkpoint_clean]
 
     # get train/val dataset
-    train_dataset = keypoints_dataset(args.dataset_path, class_names,
-                                input_shape=args.model_input_shape, is_train=True, matchpoints=matchpoints)
-    val_dataset = keypoints_dataset(args.dataset_path, class_names,
-                              input_shape=args.model_input_shape, is_train=False, matchpoints=None)
-
-    num_train = train_dataset.get_dataset_size()
-    num_val = val_dataset.get_dataset_size()
-
-    train_gen = train_dataset.generator(args.batch_size, with_meta=False)
+    train_generator = keypoints_dataset(args.dataset_path, args.batch_size, class_names,
+                                input_shape=args.model_input_shape, is_train=True, with_meta=False, matchpoints=matchpoints)
+    num_train = train_generator.get_dataset_size()
+    num_val = len(train_generator.get_val_annotations())
 
     # prepare loss function
     loss_func = get_loss(args.loss_type)
@@ -97,7 +92,7 @@ def main(args):
     epochs = initial_epoch + args.transfer_epoch
     print("Transfer training stage")
     print('Train on {} samples, val on {} samples, with batch size {}, input_shape {}.'.format(num_train, num_val, args.batch_size, args.model_input_shape))
-    model.fit_generator(generator=train_gen,
+    model.fit_generator(generator=train_generator,
                         steps_per_epoch=num_train // args.batch_size,
                         epochs=epochs,
                         initial_epoch=initial_epoch,
@@ -132,7 +127,7 @@ def main(args):
         model.compile(optimizer=optimizer, loss=loss_func) # recompile to apply the change
 
     print('Train on {} samples, val on {} samples, with batch size {}, input_size {}.'.format(num_train, num_val, args.batch_size, args.model_input_shape))
-    model.fit_generator(generator=train_gen,
+    model.fit_generator(generator=train_generator,
                         steps_per_epoch=num_train // args.batch_size,
                         epochs=args.total_epoch,
                         initial_epoch=epochs,

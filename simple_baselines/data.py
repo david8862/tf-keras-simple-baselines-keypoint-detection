@@ -4,6 +4,8 @@ import os, random
 import numpy as np
 from PIL import Image
 import json
+from tensorflow.keras.utils import Sequence
+
 from common.data_utils import random_horizontal_flip, random_vertical_flip, random_brightness, random_grayscale, random_chroma, random_contrast, random_sharpness, random_blur, random_histeq, random_rotate_angle, crop_single_object, rotate_single_object, crop_image, normalize_image, transform_keypoints, generate_gt_heatmap
 
 # by default, Simple Baselines model use output_stride = 4, which means:
@@ -14,19 +16,39 @@ from common.data_utils import random_horizontal_flip, random_vertical_flip, rand
 OUTPUT_STRIDE = 4
 
 
-class keypoints_dataset(object):
-    def __init__(self, dataset_path, class_names, input_shape, is_train, matchpoints=None):
+class keypoints_dataset(Sequence):
+    def __init__(self, dataset_path,
+                       batch_size,
+                       class_names,
+                       input_shape,
+                       is_train,
+                       with_meta=False,
+                       matchpoints=None):
         self.json_file = os.path.join(dataset_path, 'annotations.json')
-        self.is_train = is_train
         self.image_path = os.path.join(dataset_path, 'images')
+        self.batch_size = batch_size
         self.class_names = class_names
         self.num_classes = len(class_names)
         self.input_shape = input_shape
+        self.is_train = is_train
+        self.with_meta = with_meta
         # output heatmap size should be 1/OUTPUT_STRIDE of input size
         self.output_shape = (self.input_shape[0]//OUTPUT_STRIDE, self.input_shape[1]//OUTPUT_STRIDE)
         self.dataset_name = None
-        self.annotations = self._load_image_annotation()
+        self.train_annotations, self.val_annotations = self._load_image_annotation()
+        if self.is_train:
+            self.annotations = self.train_annotations
+        else:
+            self.annotations = self.val_annotations
+
         self.horizontal_matchpoints, self.vertical_matchpoints = self._get_matchpoint_list(matchpoints)
+
+        # Preallocate memory for batch input/output data
+        # input images:    batch_size * input_shape  * channel (3)
+        # output heatmaps: batch_size * output_shape * num_classes
+        self.batch_images = np.zeros(shape=(self.batch_size, self.input_shape[0], self.input_shape[1], 3), dtype=np.float32)
+        self.batch_heatmaps = np.zeros(shape=(self.batch_size, self.output_shape[0], self.output_shape[1], self.num_classes), dtype=np.float32)
+        self.batch_metainfo = list()
 
     def _get_matchpoint_list(self, matchpoints):
         horizontal_matchpoints, vertical_matchpoints = [], []
@@ -78,11 +100,7 @@ class keypoints_dataset(object):
                 val_annotation.append(annotations[idx])
             else:
                 train_annotation.append(annotations[idx])
-
-        if self.is_train:
-            return train_annotation
-        else:
-            return val_annotation
+        return train_annotation, val_annotation
 
     def get_dataset_name(self):
         return str(self.dataset_name)
@@ -97,43 +115,37 @@ class keypoints_dataset(object):
     def get_annotations(self):
         return self.annotations
 
-    def generator(self, batch_size, with_meta=False):
-        '''
-        Input:  batch_size * input_shape  * channel (3)
-        Output: batch_size * output_shape * num_classes
-        '''
+    def get_train_annotations(self):
+        return self.train_annotations
 
-        while True:
-            if self.is_train:
-                # shuffle train data every epoch
-                random.shuffle(self.annotations)
+    def get_val_annotations(self):
+        return self.val_annotations
 
-            batch_images = np.zeros(shape=(batch_size, self.input_shape[0], self.input_shape[1], 3), dtype=np.float32)
-            batch_heatmaps = np.zeros(shape=(batch_size, self.output_shape[0], self.output_shape[1], self.num_classes), dtype=np.float32)
-            batch_metainfo = list()
+    def __len__(self):
+        return len(self.annotations) // self.batch_size
 
-            count = 0
-            for i, annotation in enumerate(self.annotations):
-                # generate input image and ground truth heatmap
-                image, gt_heatmap, meta = self.process_image(i, annotation)
+    def __getitem__(self, i):
 
-                # in case we got an empty image, bypass the sample
-                if image is None:
-                    continue
+        self.batch_metainfo = []
+        for n, annotation in enumerate(self.annotations[i*self.batch_size:(i+1)*self.batch_size]):
+            sample_index = i*self.batch_size + n
+            # generate input image and ground truth heatmap
+            image, gt_heatmap, meta = self.process_image(sample_index, annotation)
 
-                index = count % batch_size
-                # form up batch data
-                batch_images[index, :, :, :] = image
-                batch_heatmaps[index, :, :, :] = gt_heatmap
-                batch_metainfo.append(meta)
-                count = count + 1
+            # in case we got an empty image, bypass the sample
+            if image is None:
+                continue
 
-                if index == (batch_size - 1):
-                    if with_meta:
-                        yield batch_images, batch_heatmaps, batch_metainfo
-                        batch_metainfo = []
-                    else:
-                        yield batch_images, batch_heatmaps
+            # form up batch data
+            self.batch_images[n, :, :, :] = image
+            self.batch_heatmaps[n, :, :, :] = gt_heatmap
+            self.batch_metainfo.append(meta)
+
+        if self.with_meta:
+            return self.batch_images, self.batch_heatmaps, self.batch_metainfo
+        else:
+            return self.batch_images, self.batch_heatmaps
+
 
     def process_image(self, sample_index, annotation):
         imagefile = os.path.join(self.image_path, annotation['img_paths'])
@@ -246,4 +258,9 @@ class keypoints_dataset(object):
 
     def get_keypoint_classes(self):
         return self.class_names
+
+    def on_epoch_end(self):
+        if self.is_train:
+            # Shuffle dataset for next epoch
+            random.shuffle(self.annotations)
 

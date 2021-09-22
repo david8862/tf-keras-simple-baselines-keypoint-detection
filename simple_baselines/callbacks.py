@@ -32,19 +32,16 @@ class EvalCallBack(Callback):
         self.input_shape = input_shape
         self.best_acc = 0.0
 
-        val_dataset = keypoints_dataset(self.dataset_path, self.class_names,
-                              input_shape=self.input_shape, is_train=False)
+        self.eval_dataset = keypoints_dataset(self.dataset_path, batch_size=1, class_names=self.class_names,
+                              input_shape=self.input_shape, is_train=False, with_meta=True)
 
         # record model & dataset name to draw training curve
         with open(os.path.join(self.log_dir, 'val.txt'), 'a+') as xfile:
-            xfile.write('model:' + model_type + ';dataset:' + val_dataset.get_dataset_name() + '\n')
+            xfile.write('model:' + model_type + ';dataset:' + self.eval_dataset.get_dataset_name() + '\n')
         xfile.close()
 
     def on_epoch_end(self, epoch, logs=None):
-        val_dataset = keypoints_dataset(self.dataset_path, self.class_names,
-                              input_shape=self.input_shape, is_train=False)
-
-        val_acc, _ = eval_PCK(self.model, 'H5', val_dataset, self.class_names, self.input_shape, score_threshold=0.5, normalize=self.normalize, conf_threshold=1e-6, save_result=False)
+        val_acc, _ = eval_PCK(self.model, 'H5', self.eval_dataset, self.class_names, self.input_shape, score_threshold=0.5, normalize=self.normalize, conf_threshold=1e-6, save_result=False)
         print('validate accuray', val_acc, '@epoch', epoch)
 
         # record accuracy for every epoch to draw training curve
