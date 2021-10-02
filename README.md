@@ -280,7 +280,7 @@ MSCOCO keypoints detection sample:
 </p>
 
 ### Evaluation
-Use [eval.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/eval.py) to do evaluation on the inference model with your test dataset. Currently it support PCK (Percentage of Correct Keypoints) metric with standard normalize coefficient (by default 6.4 under input_size=(256,256)) on different score threshold. By default it will generate a MSCOCO format keypoints detection result json file `result/keypoints_result.json` ([format](http://cocodataset.org/#format-results)). You can also use `--save_result` to save all the detection result on evaluation dataset as images and `--skeleton_path` to draw keypoint skeleton on images:
+Use [eval.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/eval.py) to do evaluation on the inference model with your test dataset. Currently it support PCK (Percentage of Correct Keypoints) metric with standard normalize coefficient (by default 6.4 under input_shape=(256,256)) on different score threshold. By default it will generate a MSCOCO format keypoints detection result json file `result/keypoints_result.json` ([format](http://cocodataset.org/#format-results)). You can also use `--save_result` to save all the detection result on evaluation dataset as images and `--skeleton_path` to draw keypoint skeleton on images:
 
 ```
 # python eval.py --model_path=model.h5 --dataset_path=data/mpii/ --classes_path=configs/mpii_classes.txt --save_result --skeleton_path=configs/mpii_skeleton.txt
