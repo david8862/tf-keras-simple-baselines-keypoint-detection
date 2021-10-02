@@ -21,7 +21,7 @@ class keypoints_dataset(Sequence):
                        batch_size,
                        class_names,
                        input_shape,
-                       is_train,
+                       is_train=True,
                        with_meta=False,
                        matchpoints=None):
         self.json_file = os.path.join(dataset_path, 'annotations.json')

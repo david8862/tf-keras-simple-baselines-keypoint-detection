@@ -74,13 +74,15 @@ def main(args):
         strategy = tf.distribute.MirroredStrategy(devices=devices_list)
         print ('Number of devices: {}'.format(strategy.num_replicas_in_sync))
         with strategy.scope():
-            # get multi-gpu train model, doesn't specify input size
-            model = get_simple_baselines_model(args.model_type, num_classes, model_input_shape=None, freeze_level=args.freeze_level, weights_path=args.weights_path)
+            # get multi-gpu train model. you can also use "model_input_shape=None" to create a dynamic input shape model,
+            # but multiscale train/inference doesn't work for it
+            model = get_simple_baselines_model(args.model_type, num_classes, model_input_shape=args.model_input_shape, freeze_level=args.freeze_level, weights_path=args.weights_path)
             # compile model
             model.compile(optimizer=optimizer, loss=loss_func)
     else:
-        # get normal train model, doesn't specify input size
-        model = get_simple_baselines_model(args.model_type, num_classes, model_input_shape=None, freeze_level=args.freeze_level, weights_path=args.weights_path)
+        # get normal train model. you can also use "model_input_shape=None" to create a dynamic input shape model,
+        # but multiscale train/inference doesn't work for it
+        model = get_simple_baselines_model(args.model_type, num_classes, model_input_shape=args.model_input_shape, freeze_level=args.freeze_level, weights_path=args.weights_path)
         # compile model
         model.compile(optimizer=optimizer, loss=loss_func)
 
