@@ -99,7 +99,7 @@ def main(args):
                         epochs=epochs,
                         initial_epoch=initial_epoch,
                         verbose=1,
-                        workers=1,
+                        workers=4,
                         use_multiprocessing=False,
                         max_queue_size=10,
                         callbacks=callbacks)
@@ -134,7 +134,7 @@ def main(args):
                         epochs=args.total_epoch,
                         initial_epoch=epochs,
                         verbose=1,
-                        workers=1,
+                        workers=4,
                         use_multiprocessing=False,
                         max_queue_size=10,
                         callbacks=callbacks)
