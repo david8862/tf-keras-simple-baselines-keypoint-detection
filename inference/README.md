@@ -128,37 +128,35 @@ Usage: simplebaselineKeypoint
 --warmup_runs, -w: number of warmup runs
 
 # ./simplebaselineKeypoint -m model.pb.mnn -i ../../../example/fitness.jpg -l ../../../configs/mpii_classes.txt -t 8 -c 10 -w 3
-Can't Find type=4 backend, use 0 instead
-Can't Find type=4 backend, use 0 instead
-image_input: width:256 , height:256, channel: 3
+image_input: name:image_input, width:256, height:256, channel:3, dim_type:TENSORFLOW
 num_outputs: 1
 num_classes: 16
 origin image size: width:640, height:640, channel:3
-model invoke average time: 24.348900 ms
+model invoke average time: 18.475500 ms
 output tensor name: heatmap_predict/BiasAdd
 output tensor shape: width:64 , height:64, channel: 16
 heatmap shape: batch:1, width:64 , height:64, channel: 16
 Caffe format: NCHW
 batch 0:
-heatmap_postprocess time: 0.138000 ms
+heatmap_postprocess time: 0.122000 ms
 prediction_list length: 16
 Keypoint Detection result:
-right_ankle 0.312912 (340, 630)
-right_knee 0.663749 (350, 520)
-right_hip 0.555374 (350, 370)
-left_hip 0.581483 (420, 370)
-left_knee 0.740888 (450, 510)
-left_ankle 0.603492 (420, 620)
-plevis 0.664853 (390, 370)
-thorax 0.731167 (380, 210)
-upper_neck 0.790868 (380, 180)
-head_top 0.509662 (370, 90)
-right_wrist 0.709388 (300, 370)
-right_elbow 0.720411 (310, 300)
-right_shoulder 0.705424 (320, 220)
-left_shoulder 0.664137 (450, 210)
-left_elbow 0.763439 (480, 290)
-left_wrist 0.738959 (490, 370)
+right_ankle 0.712625 (270, 580)
+right_knee 0.664650 (280, 450)
+right_hip 0.553376 (280, 300)
+left_hip 0.577002 (350, 300)
+left_knee 0.737033 (380, 440)
+left_ankle 0.693533 (350, 560)
+plevis 0.664985 (320, 300)
+thorax 0.726077 (310, 140)
+upper_neck 0.788715 (310, 110)
+head_top 0.725502 (300, 30)
+right_wrist 0.706904 (230, 300)
+right_elbow 0.717830 (240, 230)
+right_shoulder 0.699679 (250, 150)
+left_shoulder 0.660681 (380, 140)
+left_elbow 0.766712 (410, 220)
+left_wrist 0.742856 (420, 300)
 ```
 Here the [classes](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/configs/mpii_classes.txt) file format are the same as used in training part
 

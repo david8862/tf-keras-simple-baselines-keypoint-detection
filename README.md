@@ -34,7 +34,7 @@ An end-to-end single-object keypoint estimation pipeline with Simple Baselines m
 
 #### On-device deployment
 - [x] Tensorflow-Lite Float32/UInt8 model inference
-- [ ] MNN Float32/UInt8 model inference
+- [x] MNN Float32/UInt8 model inference
 
 ## Guide of train/evaluate/demo
 

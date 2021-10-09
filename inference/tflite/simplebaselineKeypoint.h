@@ -21,7 +21,7 @@ struct Settings {
   bool allow_fp16 = false;
   int loop_count = 1;
   float input_mean = 127.5f;
-  float input_std = 127.5f;
+  float input_std = 255.0f;
   std::string model_name = "./model.tflite";
   tflite::FlatBufferModel* model;
   std::string input_img_name = "./dog.jpg";
