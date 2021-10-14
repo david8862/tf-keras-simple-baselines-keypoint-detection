@@ -51,7 +51,7 @@ def rknn_convert(input_model, output_model, model_input_shape, dataset_file, tar
 
 
 def main():
-    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS, description='Convert Stacked Hourglass tensorflow model to RKNN model')
+    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS, description='Convert Simple Baselines tensorflow model to RKNN model')
     parser.add_argument('--input_model', required=True, type=str, help='tensorflow pb model file')
     parser.add_argument('--output_model', required=True, type=str, help='output rknn model file')
     parser.add_argument('--model_input_shape', required=False, type=str, help='model image input shape as <height>x<width>, default=%(default)s', default='256x256')
