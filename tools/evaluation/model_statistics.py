@@ -10,8 +10,8 @@ import tensorflow.keras.backend as K
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input
 
-#sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..'))
-#from common.utils import get_custom_objects
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..'))
+from common.utils import get_custom_objects
 
 # check tf version to be compatible with TF 2.x
 if tf.__version__.startswith('2'):
@@ -75,8 +75,8 @@ def main():
     parser.add_argument('--model_input_shape', type=str, required=False, default=None, help='model image input shape as <height>x<width>, optional')
     args = parser.parse_args()
 
-    #custom_object_dict = get_custom_objects()
-    model = load_model(args.model_path, compile=False)
+    custom_object_dict = get_custom_objects()
+    model = load_model(args.model_path, compile=False, custom_objects=custom_object_dict)
 
     batch, height, width, channel = model.input.shape.as_list()
 

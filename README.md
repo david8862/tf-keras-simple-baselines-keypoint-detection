@@ -303,24 +303,60 @@ optional arguments:
                         coco json annotation file
 ```
 
+For MPII dataset, you can also use [mpii_eval.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/tree/master/tools/evaluation/mpii_eval.py) to get MPII PCKh metric:
+
+```
+# cd tools/evaluation && python mpii_eval.py -h
+usage: mpii_eval.py [-h] --model_path MODEL_PATH [--dataset_path DATASET_PATH]
+                    [--classes_path CLASSES_PATH]
+                    [--score_threshold SCORE_THRESHOLD]
+                    [--conf_threshold CONF_THRESHOLD]
+                    [--model_input_shape MODEL_INPUT_SHAPE]
+
+Calculate PCKh metric on MPII dataset for keypoint detection model
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --model_path MODEL_PATH
+                        path to model file
+  --dataset_path DATASET_PATH
+                        dataset path containing images and annotation file,
+                        default=../../data/mpii
+  --classes_path CLASSES_PATH
+                        path to keypoint class definitions,
+                        default=../../configs/mpii_classes.txt
+  --score_threshold SCORE_THRESHOLD
+                        score threshold for PCK evaluation, default=0.5
+  --conf_threshold CONF_THRESHOLD
+                        confidence threshold for filtering keypoint in
+                        postprocess, default=1e-06
+  --model_input_shape MODEL_INPUT_SHAPE
+                        model image input shape as <height>x<width>,
+                        default=256x256
+```
+
+<p align="center">
+  <img src="assets/PCKh.png">
+</p>
+
 The default PCK metric (score_threshold=0.5, normalize=6.4) will also be applied on validation dataset during training process for picking best checkpoints.
 
 Some experiment on MPII Human Pose dataset:
 
-| Model name | InputSize | TrainSet | TestSet | PCK@0.5 | FLOPS | Param | Speed | Ps |
-| ----- | ------ | ------ | ------ | ----- | ----- | ----- | ----- | ----- |
-| [hg_s2_256_256](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/releases/download/v1.0.1/hg_s2_256_256_mpii.tar.gz) | 256x256 | MPII | MPII | 0.83 | 20.28G | 6.57M | 20.9ms | Keras on Titan XP |
-| [hg_s2_mobile_256_256](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/releases/download/v1.0.1/hg_s2_mobile_256_256_mpii.tar.gz) | 256x256 | MPII | MPII | 0.824 | 9.37G | 2.75M | 20.8ms | Keras on Titan XP |
+| Model name | InputSize | TrainSet | TestSet | PCK@0.5 | PCKh@0.5 | FLOPS | Param | Speed | Ps |
+| ----- | ------ | ------ | ------ | ----- | ----- | ----- | ----- | ----- | ----- |
+| [ResNet50 Deconv](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/releases/download/v1.0.0/resnet50_deconv_256_256_mpii.tar.gz) | 256x256 | MPII | MPII | 0.821 | 0.805 | 13.95G | 34.03M | 20.9ms | Keras on Titan XP |
+| [MobileNetV2 Deconv](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/releases/download/v1.0.0/mobilenetv2_deconv_256_256_mpii.tar.gz) | 256x256 | MPII | MPII | 0.809 | 0.779 | 4.19G | 9.57M | 20.9ms | Keras on Titan XP |
+| [MobileNetV2 Light Upsample](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/releases/download/v1.0.0/mobilenetv2_upsample_lite_256_256_mpii.tar.gz) | 256x256 | MPII | MPII | 0.815 | 0.783 | 1.69G | 2.70M | 20.9ms | Keras on Titan XP |
 
 
 Some experiment on MSCOCO Keypoints 2017 dataset:
 
 | Model name | InputSize | TrainSet | TestSet | PCK@0.5 | COCO AP | COCO AP50 | FLOPS | Param | Speed | Ps |
 | ----- | ------ | ------ | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-| [hg_s2_256_256](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/releases/download/v1.0.0/hg_s2_256_256_coco.tar.gz) | 256x256 | train2017 | val2017 | 0.83 | 0.386 | 0.749 | 20.28G | 6.57M | 20.9ms | Keras on Titan XP |
-| [hg_s2_mobile_256_256](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/releases/download/v1.0.0/hg_s2_mobile_256_256_coco.tar.gz) | 256x256 | train2017 | val2017 | 0.827 | 0.377 | 0.739 | 9.38G | 2.75M | 20.8ms | Keras on Titan XP |
-| [hg_s2_mobile_tiny_256_256](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/releases/download/v1.0.0/hg_s2_mobile_tiny_256_256_coco.tar.gz) | 256x256 | train2017 | val2017 | 0.787 | 0.336 | 0.697 | 2.62G | 720.8K | 19ms | Keras on Titan XP |
-| [hg_s2_mobile_tiny_192_192](https://github.com/david8862/tf-keras-stacked-hourglass-keypoint-detection/releases/download/v1.0.0/hg_s2_mobile_tiny_192_192_coco.tar.gz) | 192x192 | train2017 | val2017 | 0.792 | 0.266 | 0.649 | 1.47G | 720.8K | 18.4ms | Keras on Titan XP |
+| [ResNet50 Deconv](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/releases/download/v1.0.0/resnet50_deconv_256_256_coco.tar.gz) | 256x256 | train2017 | val2017 | 0.818 | 0.386 | 0.749 | 13.95G | 34.03M | 20.9ms | Keras on Titan XP |
+| [MobileNetV3Large Deconv](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/releases/download/v1.0.0/mobilenetv3large_deconv_256_256_coco.tar.gz) | 256x256 | train2017 | val2017 | 0.816 | 0.377 | 0.739 | 3.81G | 9.01M | 20.8ms | Keras on Titan XP |
+| [MobileNetV2 Deconv](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/releases/download/v1.0.0/mobilenetv2_deconv_256_256_coco.tar.gz) | 256x256 | train2017 | val2017 | 0.799 | 0.336 | 0.697 | 4.19G | 9.57M | 19ms | Keras on Titan XP |
 
 
 ### Tensorflow model convert

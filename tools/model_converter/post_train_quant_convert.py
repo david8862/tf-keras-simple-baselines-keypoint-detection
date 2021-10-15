@@ -13,15 +13,15 @@ from tensorflow.keras.models import load_model
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..'))
 from simple_baselines.data import keypoints_dataset
 from common.utils import get_classes
-#from common.utils import get_custom_objects
+from common.utils import get_custom_objects
 
 #tf.enable_eager_execution()
 
 
 def post_train_quant_convert(keras_model_file, dataset_path, class_names, sample_num, output_file):
-    #custom_object_dict = get_custom_objects(custom_objects_string)
+    custom_object_dict = get_custom_objects()
 
-    model = load_model(keras_model_file)
+    model = load_model(keras_model_file, custom_objects=custom_object_dict)
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
 
     # get input shape, assume only 1 input

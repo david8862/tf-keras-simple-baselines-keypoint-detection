@@ -5,6 +5,8 @@
 import numpy as np
 import os, cv2, colorsys
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
+
+from common.backbones.mobilenet_v3 import hard_sigmoid, hard_swish
 import tensorflow as tf
 
 
@@ -28,6 +30,21 @@ def optimize_tf_gpu(tf, K):
 
         # set session
         K.set_session(session)
+
+
+def get_custom_objects():
+    '''
+    form up a custom_objects dict so that the customized
+    layer/function call could be correctly parsed when keras
+    .h5 model is loading or converting
+    '''
+    custom_objects_dict = {
+        'tf': tf,
+        'hard_sigmoid': hard_sigmoid,
+        'hard_swish': hard_swish,
+    }
+
+    return custom_objects_dict
 
 
 def get_classes(classes_path):
