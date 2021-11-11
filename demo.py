@@ -155,7 +155,7 @@ def detect_img(simple_baselines):
     while True:
         img = input('Input image filename:')
         try:
-            image = Image.open(img)
+            image = Image.open(img).convert('RGB')
         except:
             print('Open Error! Try again!')
             continue
