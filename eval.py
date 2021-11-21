@@ -22,7 +22,7 @@ from simple_baselines.data import keypoints_dataset
 from simple_baselines.postprocess import post_process_heatmap, post_process_heatmap_simple
 from common.data_utils import invert_transform_keypoints, revert_keypoints
 from common.model_utils import get_normalize
-from common.utils import get_classes, get_skeleton, render_skeleton, optimize_tf_gpu
+from common.utils import get_classes, get_skeleton, render_skeleton, optimize_tf_gpu, get_custom_objects
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -538,7 +538,9 @@ def load_eval_model(model_path):
 
     # normal keras h5 model
     elif model_path.endswith('.h5'):
-        model = load_model(model_path, compile=False)
+        custom_object_dict = get_custom_objects()
+
+        model = load_model(model_path, compile=False, custom_objects=custom_object_dict)
         model_format = 'H5'
         K.set_learning_phase(0)
     else:
