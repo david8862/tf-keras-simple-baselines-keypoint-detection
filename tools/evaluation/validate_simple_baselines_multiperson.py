@@ -426,6 +426,7 @@ def main():
 
             # draw keypoint skeleton on image
             image_array = render_skeleton(image_array, keypoints_dict, skeleton_lines)
+        image.close()
 
         # save or show result
         if args.output_path:
