@@ -284,7 +284,7 @@ video detection mode
 ```
 # python demo.py --model_type=resnet50_deconv --model_input_shape=256x256 --weights_path=model.h5 --classes_path=configs/mpii_classes.txt --skeleton_path=configs/mpii_skeleton.txt --input=test.mp4
 ```
-For video detection mode, you can use "input=0" to capture live video from web camera and "output=<video name>" to dump out detection result to another video
+For video detection mode, you can use `--input=0` to capture live video from web camera and `--output=<video name>` to dump out detection result to another video
 
 MSCOCO keypoints detection sample:
 
@@ -391,6 +391,7 @@ Using [keras_to_onnx.py](https://github.com/david8862/tf-keras-simple-baselines-
     --output_file="path/to/save/model.onnx"
     --op_set=11
 ```
+by default, the converted ONNX model follows TF NHWC layout. You can also use `--inputs_as_nchw` to convert input layout to NCHW, and use [onnx_edit.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/tools/model_converter/onnx_edit.py) to edit generated ONNX model to convert output layout to NCHW.
 
 You can also use [eval.py](https://github.com/david8862/tf-keras-simple-baselines-keypoint-detection/blob/master/eval.py) to do evaluation on the pb & onnx inference model
 
