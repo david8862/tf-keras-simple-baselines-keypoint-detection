@@ -19,7 +19,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 
 from simple_baselines.data import OUTPUT_STRIDE
 from simple_baselines.postprocess import post_process_heatmap, post_process_heatmap_simple
 from common.data_utils import preprocess_image
-from common.utils import get_classes, get_skeleton, render_skeleton, get_custom_objects
+from common.utils import get_classes, get_skeleton, render_skeleton, get_custom_objects, optimize_tf_gpu
 
 from detector import detect_person, get_anchors, get_square_box
 
@@ -29,6 +29,8 @@ DET_MODEL_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
 DET_MODEL_INPUT_SHAPE = (320, 320)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+optimize_tf_gpu(tf, K)
 
 
 def predict_simple_baselines_model(model, image, model_input_shape, loop_count):

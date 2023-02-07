@@ -17,6 +17,10 @@ from common.utils import get_classes, get_skeleton, render_skeleton, optimize_tf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+import tensorflow as tf
+optimize_tf_gpu(tf, K)
+
+
 default_config = {
         "model_type": 'resnet50_deconv',
         "model_input_shape": (256, 256),

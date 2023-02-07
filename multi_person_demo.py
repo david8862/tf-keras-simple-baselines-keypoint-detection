@@ -19,6 +19,10 @@ from detector import detect_person, get_anchors, get_square_box
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+import tensorflow as tf
+optimize_tf_gpu(tf, K)
+
+
 default_config = {
         "model_type": 'resnet50_deconv',
         "model_input_shape": (256, 256),

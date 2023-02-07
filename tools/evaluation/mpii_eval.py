@@ -15,11 +15,13 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 
 from simple_baselines.data import keypoints_dataset
 from simple_baselines.postprocess import post_process_heatmap, post_process_heatmap_simple
 from common.data_utils import invert_transform_keypoints, revert_keypoints
-from common.utils import get_classes
+from common.utils import get_classes, optimize_tf_gpu
 
 from eval import model_predict_keras, model_predict_tflite, model_predict_pb, model_predict_onnx, model_predict_mnn, revert_pred_keypoints, load_eval_model, draw_plot_func
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+optimize_tf_gpu(tf, K)
 
 
 def fill_eval_array(eval_keypoints_array, pred_keypoints, metainfo, model_input_shape, output_shape):
