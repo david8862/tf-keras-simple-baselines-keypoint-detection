@@ -18,9 +18,9 @@ from simple_baselines.layers import Deconv_block, Upsample_block, Upsample_lite_
 def get_base_model(model_type, model_input_shape, weights='imagenet'):
     #prepare input tensor
     if model_input_shape:
-        input_tensor = Input(shape=model_input_shape+(3,), name='image_input')
+        input_tensor = Input(shape=model_input_shape+(3,), batch_size=None, name='image_input')
     else:
-        input_tensor = Input(shape=(None, None, 3), name='image_input')
+        input_tensor = Input(shape=(None, None, 3), batch_size=None, name='image_input')
 
     if model_type.startswith('mobilenetv1'):
         model = MobileNet(input_tensor=input_tensor, weights=weights, pooling=None, include_top=False, alpha=1.0)
