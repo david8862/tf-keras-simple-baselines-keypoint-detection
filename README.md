@@ -240,6 +240,10 @@ Following is a reference training config cmd:
 # python train.py --model_type=resnet50_deconv --model_input_shape=256x256 --dataset_path=data/mpii/ --classes_path=configs/mpii_classes.txt --matchpoint_path=configs/mpii_match_point.txt --decay_type=cosine --transfer_epoch=1
 
 ```
+or training on GPU 0, 1 and 2, if you have several GPUs on your host/server:
+```
+# CUDA_VISIBLE_DEVICES=0,1,2 python train.py --model_type=resnet50_deconv --model_input_shape=256x256 --dataset_path=data/mpii/ --classes_path=configs/mpii_classes.txt --matchpoint_path=configs/mpii_match_point.txt --decay_type=cosine --transfer_epoch=1
+```
 
 Checkpoints during training could be found at `logs/000/`. Choose a best one as result
 
