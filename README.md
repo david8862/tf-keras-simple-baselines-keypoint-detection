@@ -38,10 +38,10 @@ An end-to-end single-object keypoint estimation pipeline with Simple Baselines m
 
 ## Guide of train/evaluate/demo
 
-Install requirements on Ubuntu 16.04/18.04:
+Install requirements on Ubuntu 22.04/24.04 (with Python 3.10):
 
 ```
-# apt install python3-opencv
+# apt install imagemagick
 # pip install -r requirements.txt
 ```
 

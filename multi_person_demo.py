@@ -198,7 +198,7 @@ class SimpleBaselines(object):
 
     def predict(self, image_data):
         # get final predict heatmap
-        prediction = self.model.predict(image_data)
+        prediction = self.model.predict(image_data, verbose=0)
         if isinstance(prediction, list):
             prediction = prediction[-1]
         heatmap = prediction[0]
@@ -211,7 +211,7 @@ class SimpleBaselines(object):
 
     def batch_predict(self, image_data):
         # get batch predict heatmap
-        prediction = self.model.predict_on_batch(image_data)
+        prediction = self.model.predict_on_batch(image_data, verbose=0)
         if isinstance(prediction, list):
             prediction = prediction[-1]
 
